@@ -6,7 +6,7 @@
 /* Имя файла базы данных и скрипта схемы.
    Файлы ищутся в текущей рабочей директории запуска программы. */
 static const char *DB_FILE     = "shop.db";
-static const char *SCHEMA_FILE = "schema.sql";
+static const char *SCHEMA_FILE = "docs/schema.sql";
 
 sqlite3 *get_connection(void) {
     sqlite3 *db = NULL;
