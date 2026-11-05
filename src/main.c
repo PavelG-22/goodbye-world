@@ -42,6 +42,7 @@ int main(void) {
     char line[256];
     char role[16] = "";
     char current_login[64] = "";
+    int current_user_id = 0;
     int is_admin = 0;
 
     /* --- Цикл входа: пока не войдём, меню магазина не показываем --- */
@@ -61,6 +62,7 @@ int main(void) {
                                err, sizeof(err)) == 0) {
                 is_admin = (strcmp(role, "admin") == 0);
                 snprintf(current_login, sizeof(current_login), "%s", login);
+                repo_user_get_id(db, current_login, &current_user_id);
                 printf("Добро пожаловать, %s (%s).\n", login, role);
                 break; /* вход успешен — переходим в магазин */
             } else {
@@ -190,27 +192,54 @@ int main(void) {
         } else if (strcmp(line, "9") == 0) {
             svc_order_list(db);
         } else if (strcmp(line, "10") == 0) {
-            printf("ID клиента: ");
-            int cid = read_int();
-            int oid = 0;
-            char err[256];
-            if (svc_order_create(db, cid, &oid, err, sizeof(err)) != 0) {
-                printf("%s\n", err);
-            } else {
-                printf("Создан заказ № %d. Добавляйте товары.\n", oid);
-                for (;;) {
-                    printf("ID товара (0 — закончить): ");
-                    int pid = read_int();
-                    if (pid == 0) break;
-                    printf("Количество: ");
-                    int qty = read_int();
-                    if (svc_order_add_item(db, oid, pid, qty, err, sizeof(err)) != 0)
-                        printf("%s\n", err);
-                    else
-                        printf("Добавлено.\n");
-                }
-                svc_order_show(db, oid);
+    int oid = 0;
+    char err[256];
+
+    if (is_admin) {
+        /* админ создаёт заказ для любого клиента по ID */
+        printf("ID клиента: ");
+        int cid = read_int();
+        if (svc_order_create(db, cid, &oid, err, sizeof(err)) != 0) {
+            printf("%s\n", err);
+            oid = 0;
+        }
+    } else {
+        /* покупатель заказывает для себя */
+        int cid = svc_customer_id_for_user(db, current_user_id);
+        if (cid < 0) {
+            printf("Ошибка базы данных.\n");
+            oid = 0;
+        } else {
+            Customer c;
+            if (cid == 0) {
+                printf("Первый заказ — заполним ваш профиль.\n");
+                printf("Фамилия: "); read_line(c.last_name, sizeof(c.last_name));
+                printf("Имя: ");     read_line(c.first_name, sizeof(c.first_name));
+                printf("Телефон: "); read_line(c.phone, sizeof(c.phone));
             }
+            if (svc_order_create_for_user(db, current_user_id, &c,
+                                          &cid, &oid, err, sizeof(err)) != 0) {
+                printf("%s\n", err);
+                oid = 0;
+            }
+        }
+    }
+
+    if (oid != 0) {
+        printf("Создан заказ № %d. Добавляйте товары.\n", oid);
+        for (;;) {
+            printf("ID товара (0 — закончить): ");
+            int pid = read_int();
+            if (pid == 0) break;
+            printf("Количество: ");
+            int qty = read_int();
+            if (svc_order_add_item(db, oid, pid, qty, err, sizeof(err)) != 0)
+                printf("%s\n", err);
+            else
+                printf("Добавлено.\n");
+        }
+        svc_order_show(db, oid);
+    }
         } else if (strcmp(line, "11") == 0) {
             printf("ID заказа: ");
             int oid = read_int();

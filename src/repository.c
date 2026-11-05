@@ -448,3 +448,52 @@ int repo_user_delete(sqlite3* db, const char* login) {
     }
     return (changed == 0) ? 1 : 0; /* 1 — логина нет, 0 — удалён */
 }
+/* ID учётки по логину; 0 — не найден, -1 — ошибка */
+int repo_user_get_id(sqlite3* db, const char* login, int* out_id) {
+    const char* sql = "SELECT user_id FROM users WHERE login = ?;";
+    sqlite3_stmt* stmt = NULL;
+    if (sqlite3_prepare_v2(db, sql, -1, &stmt, NULL) != SQLITE_OK) return -1;
+    sqlite3_bind_text(stmt, 1, login, -1, SQLITE_STATIC);
+    int id = 0;
+    if (sqlite3_step(stmt) == SQLITE_ROW)
+        id = sqlite3_column_int(stmt, 0);
+    sqlite3_finalize(stmt);
+    if (out_id) *out_id = id;
+    return (id == 0) ? 1 : 0;
+}
+
+/* ID клиента, привязанного к учётке; 0 — профиля нет, -1 — ошибка */
+int repo_customer_find_by_user_id(sqlite3* db, int user_id) {
+    const char* sql = "SELECT customer_id FROM customers WHERE user_id = ?;";
+    sqlite3_stmt* stmt = NULL;
+    if (sqlite3_prepare_v2(db, sql, -1, &stmt, NULL) != SQLITE_OK) return -1;
+    sqlite3_bind_int(stmt, 1, user_id);
+    int id = 0;
+    if (sqlite3_step(stmt) == SQLITE_ROW)
+        id = sqlite3_column_int(stmt, 0);
+    sqlite3_finalize(stmt);
+    return id;
+}
+
+/* Клиент, привязанный к учётке (создаётся при первом заказе покупателя) */
+int repo_customer_add_linked(sqlite3* db, const Customer* c, int user_id) {
+    const char* sql =
+        "INSERT INTO customers (user_id, last_name, first_name, phone) "
+        "VALUES (?, ?, ?, ?);";
+    sqlite3_stmt* stmt = NULL;
+    if (sqlite3_prepare_v2(db, sql, -1, &stmt, NULL) != SQLITE_OK) {
+        print_error(db, "customer_add_linked");
+        return -1;
+    }
+    sqlite3_bind_int(stmt, 1, user_id);
+    sqlite3_bind_text(stmt, 2, c->last_name, -1, SQLITE_STATIC);
+    sqlite3_bind_text(stmt, 3, c->first_name, -1, SQLITE_STATIC);
+    sqlite3_bind_text(stmt, 4, c->phone, -1, SQLITE_STATIC);
+    int rc = sqlite3_step(stmt);
+    sqlite3_finalize(stmt);
+    if (rc != SQLITE_DONE) {
+        print_error(db, "customer_add_linked");
+        return -1;
+    }
+    return 0;
+}

@@ -217,3 +217,38 @@ int svc_user_delete(sqlite3* db, const char* login, const char* caller_login,
     }
     return repo_user_delete(db, login);
 }
+/* ID клиента, привязанного к учётке; 0 — профиля ещё нет, -1 — ошибка */
+int svc_customer_id_for_user(sqlite3* db, int user_id) {
+    return repo_customer_find_by_user_id(db, user_id);
+}
+
+/* Заказ от вошедшего покупателя: профиль ищется по учётке,
+   если его нет — создаётся из переданных данных. */
+int svc_order_create_for_user(sqlite3* db, int user_id, const Customer* profile,
+                              int* out_customer_id, int* out_order_id,
+                              char* err, int err_size) {
+    int cid = repo_customer_find_by_user_id(db, user_id);
+    if (cid < 0) return -1;
+
+    if (cid == 0) {
+        /* профиля нет — валидируем данные и создаём привязанный профиль */
+        if (is_blank(profile->last_name)) {
+            snprintf(err, err_size, "Фамилия не может быть пустой");
+            return 1;
+        }
+        if (is_blank(profile->first_name)) {
+            snprintf(err, err_size, "Имя не может быть пустым");
+            return 1;
+        }
+        if (repo_customer_find_by_phone(db, profile->phone) == 1) {
+            snprintf(err, err_size, "Клиент с таким телефоном уже существует");
+            return 1;
+        }
+        if (repo_customer_add_linked(db, profile, user_id) != 0) return -1;
+        cid = repo_customer_find_by_user_id(db, user_id);
+        if (cid <= 0) return -1;
+    }
+
+    *out_customer_id = cid;
+    return repo_order_create(db, cid, out_order_id);
+}

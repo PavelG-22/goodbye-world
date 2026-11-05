@@ -34,4 +34,8 @@ int repo_user_list(sqlite3* db);
 int repo_user_count_admins(sqlite3* db, int* out_count);
 int repo_user_delete(sqlite3* db, const char* login);
 
+int repo_user_get_id(sqlite3* db, const char* login, int* out_id);
+int repo_customer_find_by_user_id(sqlite3* db, int user_id);
+int repo_customer_add_linked(sqlite3* db, const Customer* c, int user_id);
+
 #endif

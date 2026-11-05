@@ -31,11 +31,14 @@ int svc_order_delete(sqlite3* db, int order_id);
 int svc_user_register(sqlite3* db, const User* u, const char* caller_role, char* err, int err_size);
 int svc_user_login(sqlite3* db, const char* login, const char* password,
                    char* role_out, int role_size, char* err, int err_size);
-int svc_user_register(sqlite3* db, const User* u, const char* caller_role, char* err, int err_size);
-int svc_user_login(sqlite3* db, const char* login, const char* password,
-                   char* role_out, int role_size, char* err, int err_size);
 int svc_user_list(sqlite3* db);
 int svc_user_delete(sqlite3* db, const char* login, const char* caller_login,
                     char* err, int err_size);
+
+/* пользователь-клиент */
+int svc_customer_id_for_user(sqlite3* db, int user_id);
+int svc_order_create_for_user(sqlite3* db, int user_id, const Customer* profile,
+                              int* out_customer_id, int* out_order_id,
+                              char* err, int err_size);
 
 #endif
