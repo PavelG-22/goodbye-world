@@ -51,6 +51,35 @@ int repo_customer_list(sqlite3* db) {
     }
     return 0;
 }
+int repo_customer_show(sqlite3* db, int customer_id) {
+    const char* sql =
+        "SELECT customer_id, last_name, first_name, middle_name, "
+        "email, phone, delivery_address FROM customers WHERE customer_id = ?;";
+    sqlite3_stmt* stmt = NULL;
+    if (sqlite3_prepare_v2(db, sql, -1, &stmt, NULL) != SQLITE_OK) {
+        print_error(db, "customer_show");
+        return -1;
+    }
+    sqlite3_bind_int(stmt, 1, customer_id);
+    if (sqlite3_step(stmt) != SQLITE_ROW) {
+        sqlite3_finalize(stmt);
+        return 1; /* профиля нет */
+    }
+    const unsigned char* mn = sqlite3_column_text(stmt, 3);
+    const unsigned char* em = sqlite3_column_text(stmt, 4);
+    const unsigned char* ph = sqlite3_column_text(stmt, 5);
+    const unsigned char* ad = sqlite3_column_text(stmt, 6);
+
+    printf("\n===== МОЙ ПРОФИЛЬ =====\n");
+    printf("Фамилия:  %s\n", sqlite3_column_text(stmt, 1));
+    printf("Имя:      %s\n", sqlite3_column_text(stmt, 2));
+    printf("Отчество: %s\n", mn ? (const char*)mn : "-");
+    printf("E-mail:   %s\n", em ? (const char*)em : "-");
+    printf("Телефон:  %s\n", ph ? (const char*)ph : "-");
+    printf("Адрес:    %s\n", ad ? (const char*)ad : "-");
+    sqlite3_finalize(stmt);
+    return 0;
+}
 
 /* ---------- Товары ---------- */
 
@@ -146,6 +175,44 @@ int repo_order_list(sqlite3* db) {
         return -1;
     }
     return 0;
+}
+int repo_order_list_for_user(sqlite3* db, int user_id) {
+    const char* sql =
+        "SELECT o.order_id, o.order_date, o.status, o.total_amount "
+        "FROM orders o JOIN customers c ON c.customer_id = o.customer_id "
+        "WHERE c.user_id = ? ORDER BY o.order_id;";
+    sqlite3_stmt* stmt = NULL;
+    if (sqlite3_prepare_v2(db, sql, -1, &stmt, NULL) != SQLITE_OK) {
+        print_error(db, "order_list_for_user");
+        return -1;
+    }
+    sqlite3_bind_int(stmt, 1, user_id);
+    printf("id | дата | статус | сумма\n");
+    int found = 0;
+    while (sqlite3_step(stmt) == SQLITE_ROW) {
+        const unsigned char* st = sqlite3_column_text(stmt, 2);
+        printf("%s | %s | %s | %s\n",
+               sqlite3_column_text(stmt, 0),
+               sqlite3_column_text(stmt, 1),
+               st ? (const char*)st : "-",
+               sqlite3_column_text(stmt, 3));
+        found = 1;
+    }
+    sqlite3_finalize(stmt);
+    if (!found) printf("Заказов пока нет.\n");
+    return 0;
+}
+int repo_order_belongs_to_user(sqlite3* db, int order_id, int user_id) {
+    const char* sql =
+        "SELECT 1 FROM orders o JOIN customers c ON c.customer_id = o.customer_id "
+        "WHERE o.order_id = ? AND c.user_id = ?;";
+    sqlite3_stmt* stmt = NULL;
+    if (sqlite3_prepare_v2(db, sql, -1, &stmt, NULL) != SQLITE_OK) return -1;
+    sqlite3_bind_int(stmt, 1, order_id);
+    sqlite3_bind_int(stmt, 2, user_id);
+    int ok = (sqlite3_step(stmt) == SQLITE_ROW);
+    sqlite3_finalize(stmt);
+    return ok ? 0 : 1; /* 0 — заказ пользователя, 1 — нет */
 }
 
 int repo_order_show(sqlite3* db, int order_id) {

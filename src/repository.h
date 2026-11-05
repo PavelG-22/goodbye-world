@@ -9,6 +9,7 @@ int repo_customer_add(sqlite3* db, const Customer* c);
 int repo_customer_list(sqlite3* db);
 int repo_customer_update(sqlite3* db, int customer_id, const Customer* c);
 int repo_customer_delete(sqlite3* db, int customer_id);
+int repo_customer_show(sqlite3* db, int customer_id);
 
 /* Товары */
 int repo_product_add(sqlite3* db, const Product* p);
@@ -22,6 +23,8 @@ int repo_order_add_item(sqlite3* db, int order_id, int product_id, int quantity)
 int repo_order_list(sqlite3* db);
 int repo_order_show(sqlite3* db, int order_id);
 int repo_order_delete(sqlite3* db, int order_id);
+int repo_order_list_for_user(sqlite3* db, int user_id);
+int repo_order_belongs_to_user(sqlite3* db, int order_id, int user_id);
 
 int repo_customer_exists(sqlite3* db, int customer_id);
 int repo_product_exists(sqlite3* db, int product_id);

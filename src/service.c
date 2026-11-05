@@ -16,6 +16,9 @@ static int is_blank(const char* s) {
 int svc_customer_list(sqlite3* db) {
     return repo_customer_list(db);
 }
+int svc_customer_show(sqlite3* db, int customer_id) {
+    return repo_customer_show(db, customer_id);
+}
 
 int svc_customer_add(sqlite3* db, const Customer* c, char* err, int err_size) {
     if (is_blank(c->last_name)) {
@@ -101,6 +104,13 @@ int svc_product_delete(sqlite3* db, int product_id) {
 
 int svc_order_list(sqlite3* db) {
     return repo_order_list(db);
+}
+int svc_order_list_for_user(sqlite3* db, int user_id) {
+    return repo_order_list_for_user(db, user_id);
+}
+
+int svc_order_belongs_to_user(sqlite3* db, int order_id, int user_id) {
+    return repo_order_belongs_to_user(db, order_id, user_id);
 }
 
 int svc_order_create(sqlite3* db, int customer_id, int* out_order_id,

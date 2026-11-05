@@ -89,7 +89,8 @@ int main(void) {
     /* --- Главное меню магазина --- */
     for (;;) {
         printf("\n=== МАГАЗИН ===\n");
-        printf("1 - Показать клиентов\n");
+        if (is_admin) printf("1 - Показать клиентов\n");
+        else printf("1 - Мой профиль\n");
         if (is_admin) printf("2 - Добавить клиента\n");
         if (is_admin) printf("3 - Изменить клиента\n");
         if (is_admin) printf("4 - Удалить клиента\n");
@@ -97,7 +98,8 @@ int main(void) {
         if (is_admin) printf("6 - Добавить товар\n");
         if (is_admin) printf("7 - Изменить товар\n");
         if (is_admin) printf("8 - Удалить товар\n");
-        printf("9 - Показать заказы\n");
+        if (is_admin) printf("9 - Все заказы\n"); 
+        else printf("9 - Мои заказы\n");
         printf("10 - Создать заказ\n");
         printf("11 - Содержимое заказа\n");
         if (is_admin) printf("12 - Удалить заказ\n");
@@ -110,8 +112,16 @@ int main(void) {
         read_line(line, sizeof(line));
 
         if (strcmp(line, "1") == 0) {
-            svc_customer_list(db);
-        } else if (strcmp(line, "2") == 0) {
+    if (is_admin) {
+        svc_customer_list(db);
+    } else {
+        int cid = svc_customer_id_for_user(db, current_user_id);
+        if (cid > 0)
+            svc_customer_show(db, cid);
+        else
+            printf("Профиль ещё не заполнен.\n");
+    }
+} else if (strcmp(line, "2") == 0) {
             if (!is_admin) {
                 printf("Недоступно: нужна роль администратора.\n");
             } else {
@@ -190,8 +200,12 @@ int main(void) {
                     "Товар удалён.\n", "Товар с таким ID не найден.\n");
             }
         } else if (strcmp(line, "9") == 0) {
-            svc_order_list(db);
-        } else if (strcmp(line, "10") == 0) {
+    if (is_admin) {
+        svc_order_list(db);
+    } else {
+        svc_order_list_for_user(db, current_user_id);
+    }
+} else if (strcmp(line, "10") == 0) {
     int oid = 0;
     char err[256];
 
@@ -241,10 +255,18 @@ int main(void) {
         svc_order_show(db, oid);
     }
         } else if (strcmp(line, "11") == 0) {
-            printf("ID заказа: ");
-            int oid = read_int();
+    printf("ID заказа: ");
+    int oid = read_int();
+    if (is_admin) {
+        svc_order_show(db, oid);
+    } else {
+        int cid = svc_customer_id_for_user(db, current_user_id);
+        if (cid > 0 && svc_order_belongs_to_user(db, oid, current_user_id) == 0)
             svc_order_show(db, oid);
-        } else if (strcmp(line, "12") == 0) {
+        else
+            printf("Заказ не найден или вам не принадлежит.\n");
+    }
+} else if (strcmp(line, "12") == 0) {
             if (!is_admin) {
                 printf("Недоступно: нужна роль администратора.\n");
             } else {
