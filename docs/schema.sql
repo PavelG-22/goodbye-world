@@ -1,18 +1,3 @@
--- ============================================================
--- Интернет-магазин: структура БД + тестовые данные
--- Порядок: сначала независимые таблицы, затем зависимые.
--- Удаление старой структуры — в обратном порядке.
--- ============================================================
-
--- ===== 1. Удаление старой структуры (сначала зависимые) =====
-DROP TABLE IF EXISTS order_product;
-DROP TABLE IF EXISTS orders;
-DROP TABLE IF EXISTS products;
-DROP TABLE IF EXISTS customers;
-
--- ===== 2. Пользователи системы (авторизация) =====
--- Таблица НЕ удаляется при перезапуске: учётные записи живут между запусками,
--- в отличие от тестовых данных клиентов/товаров/заказов.
 CREATE TABLE IF NOT EXISTS users (
     user_id  INTEGER PRIMARY KEY AUTOINCREMENT,
     login    TEXT NOT NULL UNIQUE,
@@ -23,8 +8,7 @@ CREATE TABLE IF NOT EXISTS users (
 INSERT OR IGNORE INTO users (login, password, role)
 VALUES ('admin', 'admin123', 'admin');
 
--- ===== 3. Покупатели (независимая таблица) =====
-CREATE TABLE customers (
+CREATE TABLE IF NOT EXISTS customers (
     customer_id       INTEGER PRIMARY KEY AUTOINCREMENT,
     user_id           INTEGER UNIQUE,
     last_name         TEXT NOT NULL,
@@ -36,8 +20,7 @@ CREATE TABLE customers (
     FOREIGN KEY (user_id) REFERENCES users(user_id)
 );
 
--- ===== 4. Товары (независимая таблица) =====
-CREATE TABLE products (
+CREATE TABLE IF NOT EXISTS products (
     product_id   INTEGER PRIMARY KEY AUTOINCREMENT,
     name         TEXT NOT NULL,
     description  TEXT,
@@ -46,8 +29,7 @@ CREATE TABLE products (
     category     TEXT
 );
 
--- ===== 5. Заказы (зависимая: ссылается на customers) =====
-CREATE TABLE orders (
+CREATE TABLE IF NOT EXISTS orders (
     order_id     INTEGER PRIMARY KEY AUTOINCREMENT,
     order_date   DATETIME DEFAULT CURRENT_TIMESTAMP,
     status       TEXT NOT NULL DEFAULT 'new',
@@ -56,10 +38,7 @@ CREATE TABLE orders (
     FOREIGN KEY (customer_id) REFERENCES customers(customer_id)
 );
 
--- ===== 6. Связка заказ–товар (доработка: развязка M:N) =====
--- quantity — сколько единиц товара в заказе;
--- составной PRIMARY KEY — один товар не попадает в заказ дважды
-CREATE TABLE order_product (
+CREATE TABLE IF NOT EXISTS order_product (
     order_id    INTEGER NOT NULL,
     product_id  INTEGER NOT NULL,
     quantity    INTEGER NOT NULL CHECK (quantity > 0),
@@ -68,18 +47,26 @@ CREATE TABLE order_product (
     FOREIGN KEY (product_id) REFERENCES products(product_id)
 );
 
--- ===== 7. Начальные данные =====
-INSERT INTO customers (customer_id, user_id, last_name, first_name, middle_name, email, phone, delivery_address)
+INSERT OR IGNORE INTO customers (customer_id, user_id, last_name, first_name, middle_name, email, phone, delivery_address)
 VALUES (1, NULL, 'Smith', 'John', 'A', 'john.smith@mail.com', '+1234567890', '101 Main St, City A');
-INSERT INTO customers (customer_id, user_id, last_name, first_name, middle_name, email, phone, delivery_address)
+
+INSERT OR IGNORE INTO customers (customer_id, user_id, last_name, first_name, middle_name, email, phone, delivery_address)
 VALUES (2, NULL, 'Doe', 'Jane', NULL, 'jane.doe@mail.com', '+0987654321', '202 Oak Ave, City B');
 
-INSERT INTO products VALUES (1,'Laptop X1','Basic laptop',900.0,10,'Electronics');
-INSERT INTO products VALUES (2,'Mouse M2','Standard mouse',30.0,50,'Peripherals');
+INSERT OR IGNORE INTO products (product_id, name, description, price, quantity, category)
+VALUES (1, 'Laptop X1', 'Basic laptop', 900.0, 10, 'Electronics');
 
-INSERT INTO orders VALUES (1,'2026-10-22 17:55:43','processing',1,900.0);
-INSERT INTO orders VALUES (2,'2026-10-22 17:55:43','new',2,30.0);
+INSERT OR IGNORE INTO products (product_id, name, description, price, quantity, category)
+VALUES (2, 'Mouse M2', 'Standard mouse', 30.0, 50, 'Peripherals');
 
--- Состав заказов: заказ 1 = ноутбук, заказ 2 = мышь
-INSERT INTO order_product VALUES (1,1,1);
-INSERT INTO order_product VALUES (2,2,1);
+INSERT OR IGNORE INTO orders (order_id, order_date, status, customer_id, total_amount)
+VALUES (1, '2026-10-22 17:55:43', 'processing', 1, 900.0);
+
+INSERT OR IGNORE INTO orders (order_id, order_date, status, customer_id, total_amount)
+VALUES (2, '2026-10-22 17:55:43', 'new', 2, 30.0);
+
+INSERT OR IGNORE INTO order_product (order_id, product_id, quantity)
+VALUES (1, 1, 1);
+
+INSERT OR IGNORE INTO order_product (order_id, product_id, quantity)
+VALUES (2, 2, 1);

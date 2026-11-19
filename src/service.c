@@ -3,6 +3,7 @@
 #include <ctype.h>
 #include "service.h"
 #include "repository.h"
+#include "export.h"
 
 static int is_blank(const char* s) {
     for (; *s; s++)
@@ -249,4 +250,8 @@ int svc_order_create_for_user(sqlite3* db, int user_id, const Customer* profile,
 
     *out_customer_id = cid;
     return repo_order_create(db, cid, out_order_id);
+}
+int service_export(void)
+{
+    return export_data();
 }

@@ -106,6 +106,7 @@ int main(void) {
         if (is_admin) printf("13 - Регистрация пользователя\n");
         if (is_admin) printf("14 - Список пользователей\n");
         if (is_admin) printf("15 - Удалить пользователя\n");
+	if (is_admin) printf("16 - Экспорт данных\n");
         printf("0 - Выход\n");
         printf("> ");
 
@@ -306,7 +307,13 @@ int main(void) {
                                         err, sizeof(err));
                 if (r == 0) printf("Пользователь удалён.\n");
                 else if (r == 1) printf("%s\n", err);
-                else printf("Ошибка базы данных.\n");
+                else printf("Ошибка базы данных.\n"); 
+		}
+            } else if (strcmp(line, "16") == 0) {
+            if (!is_admin) {
+                printf("Недоступно: нужна роль администратора.\n");
+            } else {
+                service_export();
             }
         } else if (strcmp(line, "0") == 0) {
             break;

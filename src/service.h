@@ -44,4 +44,6 @@ int svc_order_create_for_user(sqlite3* db, int user_id, const Customer* profile,
                               int* out_customer_id, int* out_order_id,
                               char* err, int err_size);
 
+int service_export(void);
+
 #endif
