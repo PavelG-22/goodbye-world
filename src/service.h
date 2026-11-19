@@ -38,7 +38,7 @@ int svc_user_list(sqlite3* db);
 int svc_user_delete(sqlite3* db, const char* login, const char* caller_login,
                     char* err, int err_size);
 
-/* пользователь-клиент */
+/* Пользователь-клиент */
 int svc_customer_id_for_user(sqlite3* db, int user_id);
 int svc_order_create_for_user(sqlite3* db, int user_id, const Customer* profile,
                               int* out_customer_id, int* out_order_id,

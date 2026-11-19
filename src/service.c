@@ -4,14 +4,12 @@
 #include "service.h"
 #include "repository.h"
 
-/* Строка из одних пробелов считается пустой — как strip() в методичке */
 static int is_blank(const char* s) {
     for (; *s; s++)
         if (!isspace((unsigned char)*s)) return 0;
     return 1;
 }
 
-/* ---------- Клиенты ---------- */
 
 int svc_customer_list(sqlite3* db) {
     return repo_customer_list(db);
@@ -57,7 +55,6 @@ int svc_customer_delete(sqlite3* db, int customer_id) {
     return repo_customer_delete(db, customer_id);
 }
 
-/* ---------- Товары ---------- */
 
 int svc_product_list(sqlite3* db) {
     return repo_product_list(db);
@@ -100,7 +97,6 @@ int svc_product_delete(sqlite3* db, int product_id) {
     return repo_product_delete(db, product_id);
 }
 
-/* ---------- Заказы ---------- */
 
 int svc_order_list(sqlite3* db) {
     return repo_order_list(db);
@@ -142,7 +138,6 @@ int svc_order_show(sqlite3* db, int order_id) {
 int svc_order_delete(sqlite3* db, int order_id) {
     return repo_order_delete(db, order_id);
 }
-/* ---------- Пользователи и вход ---------- */
 
 int svc_user_register(sqlite3* db, const User* u, const char* caller_role,
                       char* err, int err_size) {
@@ -158,8 +153,7 @@ int svc_user_register(sqlite3* db, const User* u, const char* caller_role,
         snprintf(err, err_size, "Недопустимая роль");
         return 1;
     }
-    /* Создавать администратора может только администратор.
-       caller_role == "guest" — саморегистрация до входа, там админа не будет. */
+
     if (strcmp(u->role, "admin") == 0 &&
         (caller_role == NULL || strcmp(caller_role, "admin") != 0)) {
         snprintf(err, err_size,
@@ -204,7 +198,6 @@ int svc_user_delete(sqlite3* db, const char* login, const char* caller_login,
         snprintf(err, err_size, "Логин не может быть пустым");
         return 1;
     }
-    /* Нельзя удалить самого себя */
     if (caller_login != NULL && strcmp(login, caller_login) == 0) {
         snprintf(err, err_size, "Нельзя удалить свою собственную учётную запись");
         return 1;
@@ -216,7 +209,6 @@ int svc_user_delete(sqlite3* db, const char* login, const char* caller_login,
         return 1;
     }
     if (rc != 0) return -1;
-    /* Нельзя удалить последнего администратора */
     if (strcmp(u.role, "admin") == 0) {
         int admins = 0;
         if (repo_user_count_admins(db, &admins) != 0) return -1;
@@ -227,13 +219,10 @@ int svc_user_delete(sqlite3* db, const char* login, const char* caller_login,
     }
     return repo_user_delete(db, login);
 }
-/* ID клиента, привязанного к учётке; 0 — профиля ещё нет, -1 — ошибка */
 int svc_customer_id_for_user(sqlite3* db, int user_id) {
     return repo_customer_find_by_user_id(db, user_id);
 }
 
-/* Заказ от вошедшего покупателя: профиль ищется по учётке,
-   если его нет — создаётся из переданных данных. */
 int svc_order_create_for_user(sqlite3* db, int user_id, const Customer* profile,
                               int* out_customer_id, int* out_order_id,
                               char* err, int err_size) {
@@ -241,7 +230,6 @@ int svc_order_create_for_user(sqlite3* db, int user_id, const Customer* profile,
     if (cid < 0) return -1;
 
     if (cid == 0) {
-        /* профиля нет — валидируем данные и создаём привязанный профиль */
         if (is_blank(profile->last_name)) {
             snprintf(err, err_size, "Фамилия не может быть пустой");
             return 1;

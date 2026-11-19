@@ -3,8 +3,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-/* Имя файла базы данных и скрипта схемы.
-   Файлы ищутся в текущей рабочей директории запуска программы. */
 static const char *DB_FILE     = "shop.db";
 static const char *SCHEMA_FILE = "docs/schema.sql";
 
@@ -17,8 +15,7 @@ sqlite3 *get_connection(void) {
         return NULL;
     }
 
-    /* ВАЖНО: в SQLite проверка внешних ключей выключена по умолчанию.
-       Без этой строки FOREIGN KEY в схеме игнорировались бы. */
+
     if (sqlite3_exec(db, "PRAGMA foreign_keys = ON;", NULL, NULL, NULL) != SQLITE_OK) {
         fprintf(stderr, "Не удалось включить внешние ключи: %s\n", sqlite3_errmsg(db));
         sqlite3_close(db);
@@ -29,7 +26,6 @@ sqlite3 *get_connection(void) {
 }
 
 void init_db(void) {
-    /* --- чтение файла скрипта в память --- */
     FILE *f = fopen(SCHEMA_FILE, "rb");
     if (!f) {
         fprintf(stderr, "Не найден файл %s\n", SCHEMA_FILE);
@@ -62,7 +58,6 @@ void init_db(void) {
     sql[size] = '\0';
     fclose(f);
 
-    /* --- выполнение скрипта --- */
     sqlite3 *db = get_connection();
     if (!db) {
         free(sql);

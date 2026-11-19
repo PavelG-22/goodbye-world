@@ -2,7 +2,6 @@
 #include <string.h>
 #include "repository.h"
 
-/* Печать одной строки результата запроса */
 static int cb_print(void* arg, int ncols, char** vals, char** names) {
     (void)arg; (void)names;
     for (int i = 0; i < ncols; i++) {
@@ -16,7 +15,6 @@ static void print_error(sqlite3* db, const char* what) {
     fprintf(stderr, "%s: %s\n", what, sqlite3_errmsg(db));
 }
 
-/* ---------- Клиенты ---------- */
 
 int repo_customer_add(sqlite3* db, const Customer* c) {
     const char* sql =
@@ -63,7 +61,7 @@ int repo_customer_show(sqlite3* db, int customer_id) {
     sqlite3_bind_int(stmt, 1, customer_id);
     if (sqlite3_step(stmt) != SQLITE_ROW) {
         sqlite3_finalize(stmt);
-        return 1; /* профиля нет */
+        return 1;
     }
     const unsigned char* mn = sqlite3_column_text(stmt, 3);
     const unsigned char* em = sqlite3_column_text(stmt, 4);
@@ -81,7 +79,6 @@ int repo_customer_show(sqlite3* db, int customer_id) {
     return 0;
 }
 
-/* ---------- Товары ---------- */
 
 int repo_product_add(sqlite3* db, const Product* p) {
     const char* sql =
@@ -116,7 +113,6 @@ int repo_product_list(sqlite3* db) {
     return 0;
 }
 
-/* ---------- Заказы ---------- */
 
 int repo_order_create(sqlite3* db, int customer_id, int* out_order_id) {
     const char* sql =
@@ -212,11 +208,10 @@ int repo_order_belongs_to_user(sqlite3* db, int order_id, int user_id) {
     sqlite3_bind_int(stmt, 2, user_id);
     int ok = (sqlite3_step(stmt) == SQLITE_ROW);
     sqlite3_finalize(stmt);
-    return ok ? 0 : 1; /* 0 — заказ пользователя, 1 — нет */
+    return ok ? 0 : 1;
 }
 
 int repo_order_show(sqlite3* db, int order_id) {
-    /* --- шапка заказа: соединяем orders и customers --- */
     char sql[512];
     sqlite3_stmt* stmt = NULL;
 
@@ -248,7 +243,6 @@ int repo_order_show(sqlite3* db, int order_id) {
     printf("--------------------------------\n");
     sqlite3_finalize(stmt);
 
-    /* --- позиции заказа: название, количество, цена и сумма строки --- */
     snprintf(sql, sizeof(sql),
         "SELECT p.name, op.quantity, p.price, op.quantity * p.price "
         "FROM order_product op JOIN products p ON p.product_id = op.product_id "
@@ -271,7 +265,6 @@ int repo_order_show(sqlite3* db, int order_id) {
     }
     sqlite3_finalize(stmt);
 
-    /* --- итоговая сумма считается прямо в SQL --- */
     snprintf(sql, sizeof(sql),
         "SELECT COALESCE(SUM(op.quantity * p.price), 0) "
         "FROM order_product op JOIN products p ON p.product_id = op.product_id "
@@ -437,7 +430,6 @@ int repo_product_find_by_name(sqlite3* db, const char* name) {
     sqlite3_finalize(stmt);
     return found;
 }
-/* ---------- Пользователи ---------- */
 
 int repo_user_add(sqlite3* db, const User* u) {
     const char* sql =
@@ -465,9 +457,9 @@ int repo_user_find_by_login(sqlite3* db, const char* login, User* out) {
         snprintf(out->login,    sizeof(out->login),    "%s", login);
         snprintf(out->password, sizeof(out->password), "%s", pwd  ? (const char*)pwd  : "");
         snprintf(out->role,     sizeof(out->role),     "%s", role ? (const char*)role : "");
-        rc = 0; /* нашли */
+        rc = 0;
     } else {
-        rc = 1; /* логина нет */
+        rc = 1;
     }
     sqlite3_finalize(stmt);
     return rc;
@@ -513,9 +505,8 @@ int repo_user_delete(sqlite3* db, const char* login) {
         print_error(db, "user_delete");
         return -1;
     }
-    return (changed == 0) ? 1 : 0; /* 1 — логина нет, 0 — удалён */
+    return (changed == 0) ? 1 : 0;
 }
-/* ID учётки по логину; 0 — не найден, -1 — ошибка */
 int repo_user_get_id(sqlite3* db, const char* login, int* out_id) {
     const char* sql = "SELECT user_id FROM users WHERE login = ?;";
     sqlite3_stmt* stmt = NULL;
@@ -529,7 +520,6 @@ int repo_user_get_id(sqlite3* db, const char* login, int* out_id) {
     return (id == 0) ? 1 : 0;
 }
 
-/* ID клиента, привязанного к учётке; 0 — профиля нет, -1 — ошибка */
 int repo_customer_find_by_user_id(sqlite3* db, int user_id) {
     const char* sql = "SELECT customer_id FROM customers WHERE user_id = ?;";
     sqlite3_stmt* stmt = NULL;
@@ -542,7 +532,6 @@ int repo_customer_find_by_user_id(sqlite3* db, int user_id) {
     return id;
 }
 
-/* Клиент, привязанный к учётке (создаётся при первом заказе покупателя) */
 int repo_customer_add_linked(sqlite3* db, const Customer* c, int user_id) {
     const char* sql =
         "INSERT INTO customers (user_id, last_name, first_name, phone) "

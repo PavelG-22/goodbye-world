@@ -1,14 +1,13 @@
 #ifndef MODELS_H
 #define MODELS_H
 
-/* Статусы заказа — строковые значения, как в БД (orders.status) */
 #define STATUS_NEW        "new"
 #define STATUS_PROCESSING "processing"
 #define STATUS_SHIPPED    "shipped"
 #define STATUS_DELIVERED  "delivered"
 #define STATUS_CANCELLED  "cancelled"
 
-/* Покупатель: соответствует таблице customers */
+/* customers */
 typedef struct {
     int  customer_id;
     char last_name[64];
@@ -19,7 +18,7 @@ typedef struct {
     char delivery_address[256];
 } Customer;
 
-/* Товар: соответствует таблице products */
+/* products */
 typedef struct {
     int  product_id;
     char name[128];
@@ -29,34 +28,32 @@ typedef struct {
     char category[64];
 } Product;
 
-/* Заказ: соответствует таблице orders */
+/* orders */
 typedef struct {
     int  order_id;
-    char order_date[32];       /* "2026-10-22 17:55:43" */
-    char status[32];           /* "new", "processing", ... */
+    char order_date[32];   
+    char status[32];  
     int  customer_id;
     double total_amount;
 
-    /* --- служебные поля: в БД их нет, заполняются при чтении --- */
-    char customer_name[128];   /* ФИО клиента вместо ID */
+    char customer_name[128];
 } Order;
 
-/* Позиция заказа: соответствует таблице order_product */
+/* order_product */
 typedef struct {
     int  order_id;
     int  product_id;
     int  quantity;
 
-    /* --- служебные поля: в БД их нет --- */
-    char product_name[128];    /* название товара вместо ID */
-    double unit_price;         /* цена товара на момент чтения */
-    double subtotal;           /* unit_price * quantity */
+    char product_name[128];
+    double unit_price;
+    double subtotal;
 } OrderItem;
 
 typedef struct {
     char login[64];
     char password[64];
-    char role[16]; /* "admin" или "customer" */
+    char role[16];
 } User;
 
 #endif

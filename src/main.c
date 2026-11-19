@@ -22,7 +22,7 @@ static int read_int(void) {
 static double read_double(void) {
     char line[64];
     read_line(line, sizeof(line));
-    return atof(line); /* цену вводить через точку: 59.90 */
+    return atof(line);
 }
 
 static void print_result(int r, const char* ok, const char* not_found) {
@@ -45,7 +45,7 @@ int main(void) {
     int current_user_id = 0;
     int is_admin = 0;
 
-    /* --- Цикл входа: пока не войдём, меню магазина не показываем --- */
+    /* Цикл входа */
     for (;;) {
         printf("\n=== ВХОД ===\n");
         printf("1 - Войти\n");
@@ -64,7 +64,7 @@ int main(void) {
                 snprintf(current_login, sizeof(current_login), "%s", login);
                 repo_user_get_id(db, current_login, &current_user_id);
                 printf("Добро пожаловать, %s (%s).\n", login, role);
-                break; /* вход успешен — переходим в магазин */
+                break; /* вход успешен */
             } else {
                 printf("%s\n", err);
             }
@@ -86,7 +86,7 @@ int main(void) {
         }
     }
 
-    /* --- Главное меню магазина --- */
+    /* Главное меню магазина */
     for (;;) {
         printf("\n=== МАГАЗИН ===\n");
         if (is_admin) printf("1 - Показать клиентов\n");
@@ -210,7 +210,6 @@ int main(void) {
     char err[256];
 
     if (is_admin) {
-        /* админ создаёт заказ для любого клиента по ID */
         printf("ID клиента: ");
         int cid = read_int();
         if (svc_order_create(db, cid, &oid, err, sizeof(err)) != 0) {
@@ -218,7 +217,6 @@ int main(void) {
             oid = 0;
         }
     } else {
-        /* покупатель заказывает для себя */
         int cid = svc_customer_id_for_user(db, current_user_id);
         if (cid < 0) {
             printf("Ошибка базы данных.\n");
